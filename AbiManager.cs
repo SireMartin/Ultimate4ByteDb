@@ -46,30 +46,26 @@ namespace AbiParser
                     StatCounter? fourByteStatCounter = null;
                     if (!parsedContractAbiColl.ContainsKey(fourbyteFunctionSignature))
                     {
-                        fourByteStatCounter = new();
-                        fourByteStatCounter.Name = fourbyteFunctionSignature;
-                        fourByteStatCounter.Type = StatCounter.StatCounterType.FourByteCode;
+                        fourByteStatCounter = StatCounterFactory.CreateFourByteStatCounter(fourbyteFunctionSignature);
                         //we are in the iteration of a function so there will always be a child of the 4byte sig => a function signature
                         parsedContractAbiColl.Add(fourbyteFunctionSignature, fourByteStatCounter);
                     }
                     else
                     {
                         fourByteStatCounter = parsedContractAbiColl[fourbyteFunctionSignature];
-                        ++fourByteStatCounter.Occurance;
+                        fourByteStatCounter.IncrementOccurance();
                     }
 
                     StatCounter? functionStatCounter = null;
                     if (!fourByteStatCounter.Child.ContainsKey(functionSignature))
                     {
-                        functionStatCounter = new();
-                        functionStatCounter.Name = functionSignature;
-                        functionStatCounter.Type = StatCounter.StatCounterType.FunctionSignature;
+                        functionStatCounter = StatCounterFactory.CreateFunctionStatCounter(functionSignature);
                         fourByteStatCounter.Child.Add(functionSignature, functionStatCounter);
                     }
                     else
                     {
                         functionStatCounter= fourByteStatCounter.Child[functionSignature];
-                        ++functionStatCounter.Occurance;
+                        functionStatCounter.IncrementOccurance();
                     }
 
                     //remark: if only the order of arguments differs for an equally named function, they will belong to a different 4byte code
@@ -86,29 +82,25 @@ namespace AbiParser
                         string key = $"{iterFunctionInputVariable.seq}_{iterFunctionInputVariable.obj.internalType}";
                         if (!functionStatCounter.Child.ContainsKey(key))
                         {
-                            inputVariableStatCounter = new();
-                            inputVariableStatCounter.Name = iterFunctionInputVariable.obj.internalType;
-                            inputVariableStatCounter.Type = StatCounter.StatCounterType.InputVariable;
+                            inputVariableStatCounter = StatCounterFactory.CreateInputVariableStatCounter(iterFunctionInputVariable.obj.internalType);
                             functionStatCounter.Child.Add(key, inputVariableStatCounter);
                         }
                         else
                         {
                             inputVariableStatCounter = functionStatCounter.Child[key];
-                            ++inputVariableStatCounter.Occurance;
+                            inputVariableStatCounter.IncrementOccurance();
                         }
 
                         StatCounter variableNameStatCounter = null;
                         if (!inputVariableStatCounter.Child.ContainsKey(iterFunctionInputVariable.obj.name))
                         {
-                            variableNameStatCounter = new();
-                            variableNameStatCounter.Name = iterFunctionInputVariable.obj.name;
-                            variableNameStatCounter.Type = StatCounter.StatCounterType.VariableName;
+                            variableNameStatCounter = StatCounterFactory.CreateVariableNameStatCounter(iterFunctionInputVariable.obj.name);
                             inputVariableStatCounter.Child.Add(iterFunctionInputVariable.obj.name, variableNameStatCounter);
                         }
                         else
                         {
                             variableNameStatCounter = inputVariableStatCounter.Child[iterFunctionInputVariable.obj.name];
-                            ++variableNameStatCounter.Occurance;
+                            variableNameStatCounter.IncrementOccurance();
                         }
                     }
                 }
@@ -116,7 +108,7 @@ namespace AbiParser
             JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
             options.Converters.Add(new StatCounterJsonConverter());
             Console.WriteLine(JsonSerializer.Serialize(parsedContractAbiColl, options: options ));
-
+            return;
             //todo: write parsed contracts abi 4byte data to redis
 
             //permutate the collections and write to redis
