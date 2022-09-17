@@ -45,10 +45,23 @@ namespace AbiParser
                     writer.WriteEndArray();
                     writer.WriteEndObject();
                     break;
+                case EventStatCounter _:
+                    writer.WriteStartObject();
+                    writer.WriteString("eventSig", value.Name);
+                    writer.WriteNumber("occurance", value.Occurance);
+                    writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
+                    writer.WriteStartArray("inputVarTypeColl");
+                    foreach (var item in value.Child.Values)
+                    {
+                        JsonSerializer.Serialize(writer, item, options);
+                    }
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                    break;
                 case FourByteStatCounter _:
                     writer.WriteStartObject();
-                    writer.WriteString("fctSelector", "0x" + value.Name);
-                    writer.WriteStartArray("fctSigColl");
+                    writer.WriteString("selector", "0x" + value.Name);
+                    writer.WriteStartArray("sigColl");
                     foreach (var item in value.Child.Values)
                     {
                         JsonSerializer.Serialize(writer, item, options);

@@ -26,12 +26,12 @@ namespace AbiParser
 
         public virtual void IncrementOccurance() => ++Occurance;
 
-        public StatCounter AddChild(string argDictRef, string argName, StatCounter? argParent)
+        public StatCounter AddChild(string argDictRef, string argName, StatCounter? argParent, bool isEvent = false)
         {
             StatCounter? childStatCounter = null;
             if (!Child.ContainsKey(argDictRef))
             {
-                childStatCounter = CreateChildStatCounter(argName, argParent);
+                childStatCounter = CreateChildStatCounter(argName, argParent, isEvent);
                 //we are in the iteration of a function so there will always be a child of the 4byte sig => a function signature
                 Child.Add(argDictRef, childStatCounter);
             }
@@ -54,49 +54,47 @@ namespace AbiParser
 
         public virtual int GetSumOfChildOccurences() => Child.Sum(x => x.Value.Occurance);
 
-        public virtual StatCounter CreateChildStatCounter(string argName, StatCounter? argParent)
-        {
-            return new FourByteStatCounter(argName, argParent);
-        }
+        public virtual StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
+            new FourByteStatCounter(argName, argParent);
     }
 
     internal class FourByteStatCounter : StatCounter
     {
         public FourByteStatCounter(string argName, StatCounter? argParent) : base(argName, argParent) { }
 
-        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent)
-        {
-            return new FunctionStatCounter(argName, argParent);
-        }
+        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
+            isEvent? new EventStatCounter(argName, argParent) : new FunctionStatCounter(argName, argParent);
     }
 
     internal class FunctionStatCounter : StatCounter
     {
         public FunctionStatCounter(string argName, StatCounter? argParent) : base(argName, argParent) { }
 
-        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent)
-        {
-            return new InputVariableStatCounter(argName, argParent);
-        }
+        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
+            new InputVariableStatCounter(argName, argParent);
+    }
+
+    internal class EventStatCounter : StatCounter
+    {
+        public EventStatCounter(string argName, StatCounter? argParent) : base(argName, argParent) { }
+
+        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
+            new InputVariableStatCounter(argName, argParent);
     }
 
     internal class InputVariableStatCounter : StatCounter
     {
         public InputVariableStatCounter(string argName, StatCounter? argParent) : base(argName, argParent) { }
 
-        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent)
-        {
-            return new VariableNameStatCounter(argName, argParent);
-        }
+        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
+            new VariableNameStatCounter(argName, argParent);
     }
 
     internal class VariableNameStatCounter : StatCounter
     {
         public VariableNameStatCounter(string argName, StatCounter? argParent) : base(argName, argParent) { }
 
-        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent)
-        {
+        public override StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
             throw new Exception("No child statcounter type has been defined for VariableNameStatCounter");
-        }
     }
 }

@@ -12,6 +12,9 @@ namespace AbiParser
 {
     internal class AbiManager
     {
+        private const string TYPE_FUNCTION = "function";
+        private const string TYPE_EVENT = "event";
+
         //4bytecode data based on parsed contract abi
         StatCounter rootStatCounter = new StatCounter("root", null);
         //collections to permutating
@@ -27,7 +30,7 @@ namespace AbiParser
             _redis = ConnectionMultiplexer.Connect($"localhost:30073,abortConnect=false,ssl=false,allowAdmin=true,password=mypassword");
             _db = _redis.GetDatabase();
 
-            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/1", "metadata.json", SearchOption.AllDirectories))
+            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/41", "metadata.json", SearchOption.AllDirectories))
             {
                 /*Console.WriteLine($"{iterFilePath} will be processed");
                 string[] splittedFilePath = iterFilePath.Split(Path.DirectorySeparatorChar);
@@ -41,7 +44,7 @@ namespace AbiParser
                 StreamReader streamReader = new StreamReader(iterFilePath);
                 RootAbi? iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
 
-                foreach (var iterFunction in iterAbi.output.abi.Where(x => x.type == "function"))
+                foreach (var iterFunction in iterAbi.output.abi.Where(x => x.type == TYPE_FUNCTION || x.type == TYPE_EVENT))
                 {
                     //internalType (solidity) are translate to types (abi)
                     string arguments = $"({string.Join(",", iterFunction.inputs.Select(x => x.type))})";
@@ -54,7 +57,7 @@ namespace AbiParser
                     //add the redundant 4byte code for referencing purposes to the container
                     StatCounter? fourByteStatCounter = rootStatCounter.AddChild(fourbyteFunctionSignature, fourbyteFunctionSignature, rootStatCounter);
 
-                    StatCounter? functionStatCounter = fourByteStatCounter.AddChild(functionSignature, functionSignature, fourByteStatCounter);
+                    StatCounter? functionStatCounter = fourByteStatCounter.AddChild(functionSignature, functionSignature, fourByteStatCounter, iterFunction.type == TYPE_EVENT);
 
                     //remark: if only the order of arguments differs for an equally named function, they will belong to a different 4byte code
                     foreach (var iterFunctionInputVariable in iterFunction.inputs.Select((x, y) => new { seq = y, obj = x }))
@@ -72,19 +75,19 @@ namespace AbiParser
                 }
             }
 
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: start permutating");
-            foreach (string iterFunctionName in functionNameColl)
-            {
-                foreach (string[] iterArgumentTypeColl in functionArgumentColl)
-                {
-                    string functionSignature = $"{iterFunctionName}({string.Join(",", iterArgumentTypeColl)})";
-                    string fourbyteFunctionSignature = new Nethereum.Util.Sha3Keccack().CalculateHash(functionSignature).Substring(0, 8);
-                    StatCounter? fourByteStatCounter = rootStatCounter.AddChild(fourbyteFunctionSignature, fourbyteFunctionSignature, rootStatCounter);
-                    fourByteStatCounter.AddChild(functionSignature, functionSignature, fourByteStatCounter);
-                    ++processedPermutationCounter;
-                }
-            }
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedPermutationCounter} permutations made");
+            //Console.WriteLine($"{DateTime.Now:HH:mm:ss}: start permutating");
+            //foreach (string iterFunctionName in functionNameColl)
+            //{
+            //    foreach (string[] iterArgumentTypeColl in functionArgumentColl)
+            //    {
+            //        string functionSignature = $"{iterFunctionName}({string.Join(",", iterArgumentTypeColl)})";
+            //        string fourbyteFunctionSignature = new Nethereum.Util.Sha3Keccack().CalculateHash(functionSignature).Substring(0, 8);
+            //        StatCounter? fourByteStatCounter = rootStatCounter.AddChild(fourbyteFunctionSignature, fourbyteFunctionSignature, rootStatCounter);
+            //        fourByteStatCounter.AddChild(functionSignature, functionSignature, fourByteStatCounter);
+            //        ++processedPermutationCounter;
+            //    }
+            //}
+            //Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedPermutationCounter} permutations made");
 
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.Converters.Add(new StatCounterJsonConverter());
@@ -98,10 +101,12 @@ namespace AbiParser
 
             options = new JsonSerializerOptions { WriteIndented = true };
             options.Converters.Add(new StatCounterJsonConverter());
-            //Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options));
+            Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options));
         }
     }
 }
 
 //todo: what is the 4bytecode of the constructor? with or without ()?
-//todo: also for events?
+//todo: moet onderscheid duidelijk zijn in UI tss event en fucntion?
+//todo: contract address case sensitive?
+//greg: docker container guy?
