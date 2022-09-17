@@ -18,6 +18,7 @@ namespace AbiParser
         private HashSet<string> functionNameColl = new();
         private HashSet<string[]> functionArgumentColl = new();
         int processedContractCounter = 0;
+        int processedPermutationCounter = 0;
         private IDatabase _db;
         private ConnectionMultiplexer _redis;
 
@@ -26,20 +27,22 @@ namespace AbiParser
             _redis = ConnectionMultiplexer.Connect($"localhost:30073,abortConnect=false,ssl=false,allowAdmin=true,password=mypassword");
             _db = _redis.GetDatabase();
 
-            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/11155111", "metadata.json", SearchOption.AllDirectories))
+            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/1", "metadata.json", SearchOption.AllDirectories))
             {
-                //Console.WriteLine($"{iterFilePath} will be processed");
+                /*Console.WriteLine($"{iterFilePath} will be processed");
                 string[] splittedFilePath = iterFilePath.Split(Path.DirectorySeparatorChar);
                 string chainId = splittedFilePath[splittedFilePath.Count() - 3];
-                string contractAddress = splittedFilePath[splittedFilePath.Count() - 2];
+                string contractAddress = splittedFilePath[splittedFilePath.Count() - 2];*/
+
+            //foreach (var iterFilePath in Directory.EnumerateFiles(".", "contract*.json", SearchOption.AllDirectories))
+            //{
+            //    Console.WriteLine($"{iterFilePath} will be processed");
+
                 StreamReader streamReader = new StreamReader(iterFilePath);
                 RootAbi? iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
 
                 foreach (var iterFunction in iterAbi.output.abi.Where(x => x.type == "function"))
                 {
-                    //todo: what is the 4bytecode of the constructor? with or without ()?
-                    //todo: also for events?
-
                     //internalType (solidity) are translate to types (abi)
                     string arguments = $"({string.Join(",", iterFunction.inputs.Select(x => x.type))})";
                     string functionSignature = iterFunction.name + arguments;
@@ -69,52 +72,36 @@ namespace AbiParser
                 }
             }
 
-            //JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
-            JsonSerializerOptions options = new JsonSerializerOptions();
-            options.Converters.Add(new StatCounterJsonConverter());
-
-            foreach (KeyValuePair<string, StatCounter> iter in rootStatCounter.Child)
-            {
-                _db.StringSet(iter.Key, JsonSerializer.Serialize(iter.Value, options: options));
-            }
-
-            //Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options: options ));
-            return;
-            //todo: write parsed contracts abi 4byte data to redis
-            
-
-            //permutate the collections and write to redis
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: start permutating");
             foreach (string iterFunctionName in functionNameColl)
             {
                 foreach (string[] iterArgumentTypeColl in functionArgumentColl)
                 {
-                    string functionSig = $"{iterFunctionName}({string.Join(",", iterArgumentTypeColl)})";
-                    string fourbyteCode = new Nethereum.Util.Sha3Keccack().CalculateHash(functionSig).Substring(0, 8);
-                    if (!rootStatCounter.Child.ContainsKey(fourbyteCode))
-                    {
-                        var perm = new { fctSelector = fourbyteCode, occurance = 1, 
-                            fctSigs = new[] 
-                            { 
-                                new {
-                                    fctSig = functionSig,
-                                    occurance = 1,
-                                    likelyhood = 1,
-                                    inputVars = new[] 
-                                    { 
-                                        iterArgumentTypeColl.Select(x => new 
-                                        { 
-                                            varType = x
-                                        })
-                                    }
-                                }
-                            }
-                        };
-                        //push to redis
-                        Console.WriteLine(JsonSerializer.Serialize(perm, options: options ));
-                    }
-                    
+                    string functionSignature = $"{iterFunctionName}({string.Join(",", iterArgumentTypeColl)})";
+                    string fourbyteFunctionSignature = new Nethereum.Util.Sha3Keccack().CalculateHash(functionSignature).Substring(0, 8);
+                    StatCounter? fourByteStatCounter = rootStatCounter.AddChild(fourbyteFunctionSignature, fourbyteFunctionSignature, rootStatCounter);
+                    fourByteStatCounter.AddChild(functionSignature, functionSignature, fourByteStatCounter);
+                    ++processedPermutationCounter;
                 }
             }
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedPermutationCounter} permutations made");
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.Converters.Add(new StatCounterJsonConverter());
+
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: Start inserting in redis");
+            foreach (KeyValuePair<string, StatCounter> iter in rootStatCounter.Child)
+            {
+                _db.StringSet(iter.Key, JsonSerializer.Serialize(iter.Value, options: options));
+            }
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: End inserting in redis");
+
+            options = new JsonSerializerOptions { WriteIndented = true };
+            options.Converters.Add(new StatCounterJsonConverter());
+            //Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options));
         }
     }
 }
+
+//todo: what is the 4bytecode of the constructor? with or without ()?
+//todo: also for events?
