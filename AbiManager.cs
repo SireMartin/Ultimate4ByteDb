@@ -18,10 +18,12 @@ namespace AbiParser
         //4bytecode data based on parsed contract abi
         StatCounter rootStatCounter = new StatCounter("root", null);
         //collections to permutating
-        private HashSet<string> functionNameColl = new();
-        private HashSet<string[]> functionArgumentColl = new();
-        int processedContractCounter = 0;
-        int processedPermutationCounter = 0;
+        //private HashSet<string> functionNameColl = new();
+        //private HashSet<string[]> functionArgumentColl = new();
+        //int processedPermutationCounter = 0;
+        private long processedContractCounter = 0;
+        private long processedSelectorCounter = 0;
+   
         private IDatabase _db;
         private ConnectionMultiplexer _redis;
 
@@ -30,7 +32,7 @@ namespace AbiParser
             _redis = ConnectionMultiplexer.Connect($"localhost:30073,abortConnect=false,ssl=false,allowAdmin=true,password=mypassword");
             _db = _redis.GetDatabase();
 
-            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/41", "metadata.json", SearchOption.AllDirectories))
+            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/1", "metadata.json", SearchOption.AllDirectories))
             {
                 /*Console.WriteLine($"{iterFilePath} will be processed");
                 string[] splittedFilePath = iterFilePath.Split(Path.DirectorySeparatorChar);
@@ -49,8 +51,8 @@ namespace AbiParser
                     //internalType (solidity) are translate to types (abi)
                     string arguments = $"({string.Join(",", iterFunction.inputs.Select(x => x.type))})";
                     string functionSignature = iterFunction.name + arguments;
-                    functionNameColl.Add(iterFunction.name);
-                    functionArgumentColl.Add(iterFunction.inputs.Select(x => x.internalType).ToArray());
+                    //functionNameColl.Add(iterFunction.name);
+                    //functionArgumentColl.Add(iterFunction.inputs.Select(x => x.internalType).ToArray());
                     string fourbyteFunctionSignature = new Nethereum.Util.Sha3Keccack().CalculateHash(functionSignature).Substring(0, 8);
                     //Console.WriteLine($"4byte code for function {functionSignature} is {fourbyteFunctionSignature}");
 
@@ -68,10 +70,11 @@ namespace AbiParser
 
                         inputVariableStatCounter.AddChild(iterFunctionInputVariable.obj.name, iterFunctionInputVariable.obj.name, inputVariableStatCounter);
                     }
+                    ++processedSelectorCounter;
                 }
                 if(++processedContractCounter % 1000 == 0)
                 {
-                    Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedContractCounter} contracts processed");
+                    Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedContractCounter} contracts and {processedSelectorCounter} selectors processed");
                 }
             }
 
@@ -92,16 +95,25 @@ namespace AbiParser
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.Converters.Add(new StatCounterJsonConverter());
 
+            float occurences = 0;
+            long records = 0;
             Console.WriteLine($"{DateTime.Now:HH:mm:ss}: Start inserting in redis");
             foreach (KeyValuePair<string, StatCounter> iter in rootStatCounter.Child)
             {
+                occurences += iter.Value.Occurence;
+                if (++records % 1000 == 0)
+                {
+                    Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {records} records inserted for {occurences} occurences");
+                }
                 _db.StringSet(iter.Key, JsonSerializer.Serialize(iter.Value, options: options));
             }
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: total records is {records}");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: total occurences is {occurences}");
             Console.WriteLine($"{DateTime.Now:HH:mm:ss}: End inserting in redis");
 
             options = new JsonSerializerOptions { WriteIndented = true };
             options.Converters.Add(new StatCounterJsonConverter());
-            Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options));
+            //Console.WriteLine(JsonSerializer.Serialize(rootStatCounter, options));
         }
     }
 }

@@ -17,7 +17,7 @@ namespace AbiParser
                 case VariableNameStatCounter _:
                     writer.WriteStartObject();
                     writer.WriteString("varName", value.Name);
-                    writer.WriteNumber("occurance", value.Occurance);
+                    writer.WriteNumber("occurance", value.Occurence);
                     writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteEndObject();
                     break;
@@ -35,7 +35,7 @@ namespace AbiParser
                 case FunctionStatCounter _:
                     writer.WriteStartObject();
                     writer.WriteString("fctSig", value.Name);
-                    writer.WriteNumber("occurance", value.Occurance);
+                    writer.WriteNumber("occurance", value.Occurence);
                     writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteStartArray("inputVarTypeColl");
                     foreach (var item in value.Child.Values)
@@ -48,7 +48,7 @@ namespace AbiParser
                 case EventStatCounter _:
                     writer.WriteStartObject();
                     writer.WriteString("eventSig", value.Name);
-                    writer.WriteNumber("occurance", value.Occurance);
+                    writer.WriteNumber("occurance", value.Occurence);
                     writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteStartArray("inputVarTypeColl");
                     foreach (var item in value.Child.Values)

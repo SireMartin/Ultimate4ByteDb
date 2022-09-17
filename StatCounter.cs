@@ -14,17 +14,17 @@ namespace AbiParser
         public Dictionary<string, StatCounter> Child { get; set; }
 
         //we do not add non-existing fourbytes (preferred for memory), we generate them afterwards when filling the redis
-        public int Occurance;
+        public float Occurence;
 
         public StatCounter(string argName, StatCounter? argParent)
         {
             Name = argName;
             Parent = argParent;
-            Occurance = 1;
+            Occurence = 1;
             Child = new Dictionary<string, StatCounter>();
         }
 
-        public virtual void IncrementOccurance() => ++Occurance;
+        public virtual void IncrementOccurance() => ++Occurence;
 
         public StatCounter AddChild(string argDictRef, string argName, StatCounter? argParent, bool isEvent = false)
         {
@@ -32,7 +32,6 @@ namespace AbiParser
             if (!Child.ContainsKey(argDictRef))
             {
                 childStatCounter = CreateChildStatCounter(argName, argParent, isEvent);
-                //we are in the iteration of a function so there will always be a child of the 4byte sig => a function signature
                 Child.Add(argDictRef, childStatCounter);
             }
             else
@@ -43,16 +42,8 @@ namespace AbiParser
             return childStatCounter;
         }
 
-        public virtual float CalculateLikelyhood()
-        {
-            if (Parent is null)
-            {
-                return 0F;
-            }
-            return Occurance / Parent.GetSumOfChildOccurences();
-        }
-
-        public virtual int GetSumOfChildOccurences() => Child.Sum(x => x.Value.Occurance);
+        public virtual float CalculateLikelyhood() => 
+            Parent is null ? 0F: Occurence / Parent.Occurence;
 
         public virtual StatCounter CreateChildStatCounter(string argName, StatCounter? argParent, bool isEvent = false) =>
             new FourByteStatCounter(argName, argParent);
