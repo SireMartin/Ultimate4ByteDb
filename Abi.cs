@@ -102,7 +102,7 @@ namespace AbiParser
     public class Optimizer
     {
         public bool enabled { get; set; }
-        public int runs { get; set; }
+        public long runs { get; set; }
     }
 
     public class Sources

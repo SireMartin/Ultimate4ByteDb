@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.ComponentModel.DataAnnotations;
 
 namespace AbiParser
 {
@@ -24,13 +18,13 @@ namespace AbiParser
                     writer.WriteStartObject();
                     writer.WriteString("varName", value.Name);
                     writer.WriteNumber("occurance", value.Occurance);
-                    writer.WriteNumber("likelyhood", .789);
+                    writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteEndObject();
                     break;
                 case InputVariableStatCounter _:
                     writer.WriteStartObject();
-                    writer.WriteString("varType", value.Name);
-                    writer.WriteStartArray("varNames");
+                    writer.WriteString("inputVarType", value.Name);
+                    writer.WriteStartArray("varNameColl");
                     foreach (var item in value.Child.Values)
                     {
                         JsonSerializer.Serialize(writer, item, options);
@@ -42,8 +36,8 @@ namespace AbiParser
                     writer.WriteStartObject();
                     writer.WriteString("fctSig", value.Name);
                     writer.WriteNumber("occurance", value.Occurance);
-                    writer.WriteNumber("likelyhood", .123);
-                    writer.WriteStartArray("inputVars");
+                    writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
+                    writer.WriteStartArray("inputVarTypeColl");
                     foreach (var item in value.Child.Values)
                     {
                         JsonSerializer.Serialize(writer, item, options);
@@ -52,9 +46,18 @@ namespace AbiParser
                     writer.WriteEndObject();
                     break;
                 case FourByteStatCounter _:
-                    writer.WriteString("fctSelector", value.Name);
-                    writer.WriteNumber("occurance", value.Occurance);
-                    writer.WriteStartArray("fctSigs");
+                    writer.WriteStartObject();
+                    writer.WriteString("fctSelector", "0x" + value.Name);
+                    writer.WriteStartArray("fctSigColl");
+                    foreach (var item in value.Child.Values)
+                    {
+                        JsonSerializer.Serialize(writer, item, options);
+                    }
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                    break;
+                default:    //the root statcounter of base type StatCounter
+                    writer.WriteStartArray();
                     foreach (var item in value.Child.Values)
                     {
                         JsonSerializer.Serialize(writer, item, options);
