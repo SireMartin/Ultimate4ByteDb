@@ -23,16 +23,19 @@ namespace AbiParser
         //int processedPermutationCounter = 0;
         private long processedContractCounter = 0;
         private long processedSelectorCounter = 0;
-   
-        private IDatabase _db;
-        private ConnectionMultiplexer _redis;
+
+        private readonly string _redisConnStr;
+        private readonly string _sourcePath;
+
+        public AbiManager()
+        {
+            _sourcePath = Environment.GetEnvironmentVariable("SOURCE_PATH")!;
+            _redisConnStr = Environment.GetEnvironmentVariable("REDIS_CONNSTR")!;
+        }
 
         public void ProcessData()
         {
-            _redis = ConnectionMultiplexer.Connect($"localhost:30073,abortConnect=false,ssl=false,allowAdmin=true,password=mypassword");
-            _db = _redis.GetDatabase();
-
-            foreach (var iterFilePath in Directory.EnumerateFiles("/data/sourcify/full_match/1", "metadata.json", SearchOption.AllDirectories))
+            foreach (var iterFilePath in Directory.EnumerateFiles(_sourcePath, "metadata.json", SearchOption.AllDirectories))
             {
                 /*Console.WriteLine($"{iterFilePath} will be processed");
                 string[] splittedFilePath = iterFilePath.Split(Path.DirectorySeparatorChar);
@@ -41,7 +44,7 @@ namespace AbiParser
 
             //foreach (var iterFilePath in Directory.EnumerateFiles(".", "contract*.json", SearchOption.AllDirectories))
             //{
-            //    Console.WriteLine($"{iterFilePath} will be processed");
+                Console.WriteLine($"{iterFilePath} will be processed");
 
                 StreamReader streamReader = new StreamReader(iterFilePath);
                 RootAbi? iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
@@ -74,9 +77,10 @@ namespace AbiParser
                 }
                 if(++processedContractCounter % 1000 == 0)
                 {
-                    Console.WriteLine($"{DateTime.Now:HH:mm:ss}: {processedContractCounter} contracts and {processedSelectorCounter} selectors processed");
+                    Console.WriteLine($"{DateTime.Now:HH:mm:ss}: Busy: {processedContractCounter} contracts and {processedSelectorCounter} selectors processed");
                 }
             }
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss}: Finished: {processedContractCounter} contracts and {processedSelectorCounter} selectors processed");
 
             //Console.WriteLine($"{DateTime.Now:HH:mm:ss}: start permutating");
             //foreach (string iterFunctionName in functionNameColl)
@@ -94,6 +98,10 @@ namespace AbiParser
 
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.Converters.Add(new StatCounterJsonConverter());
+
+            Thread.Sleep(2000);
+            ConnectionMultiplexer _redis = ConnectionMultiplexer.Connect(_redisConnStr);
+            IDatabase _db = _redis.GetDatabase();
 
             float occurences = 0;
             long records = 0;

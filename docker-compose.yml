@@ -1,0 +1,28 @@
+version: "2.4"
+services:
+  abi_parser:
+    image: abi_parser:1
+    build: AbiParser
+    container_name: abi_parser
+    volumes:
+      - /mnt/c/temp:/data
+    depends_on:
+      - redis
+    networks:
+      - sourcify
+  redis:
+    image: redis:latest
+    container_name: redis
+    volumes:
+      - /mnt/c/temp/redisdata:/data
+    environment:
+      - TZ=UTC
+      - REDIS_PASSWORD=mypassword
+    command: "--save 60 1 --loglevel warning"
+    ports:
+      - "6379:6379"
+    networks:
+      - sourcify
+networks:
+  sourcify:
+    driver: bridge
