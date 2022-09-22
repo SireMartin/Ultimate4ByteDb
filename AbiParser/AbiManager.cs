@@ -99,7 +99,6 @@ namespace AbiParser
             JsonSerializerOptions options = new JsonSerializerOptions();
             options.Converters.Add(new StatCounterJsonConverter());
 
-            Thread.Sleep(2000);
             ConnectionMultiplexer _redis = ConnectionMultiplexer.Connect(_redisConnStr);
             IDatabase _db = _redis.GetDatabase();
 

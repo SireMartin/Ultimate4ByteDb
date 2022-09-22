@@ -14,7 +14,7 @@ services:
     image: redis:latest
     container_name: redis
     volumes:
-      - /mnt/c/temp/redisdata:/data
+      - data_redis:/data
     environment:
       - TZ=UTC
       - REDIS_PASSWORD=mypassword
@@ -26,3 +26,7 @@ services:
 networks:
   sourcify:
     driver: bridge
+
+volumes:
+  data_redis:
+    driver: local
