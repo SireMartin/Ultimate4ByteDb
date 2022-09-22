@@ -5,7 +5,7 @@ services:
     build: AbiParser
     container_name: abi_parser
     volumes:
-      - /mnt/c/temp:/data
+      - /media/md/bb53783f-9c30-4067-8105-3337e14ac816/sourcify:/data
     depends_on:
       - redis
     networks:
@@ -17,7 +17,6 @@ services:
       - data_redis:/data
     environment:
       - TZ=UTC
-      - REDIS_PASSWORD=mypassword
     command: "--save 60 1 --loglevel warning"
     ports:
       - "6379:6379"

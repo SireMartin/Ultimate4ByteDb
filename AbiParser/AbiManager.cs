@@ -44,11 +44,20 @@ namespace AbiParser
 
             //foreach (var iterFilePath in Directory.EnumerateFiles(".", "contract*.json", SearchOption.AllDirectories))
             //{
-                Console.WriteLine($"{iterFilePath} will be processed");
+            //    Console.WriteLine($"{iterFilePath} will be processed");
 
-                StreamReader streamReader = new StreamReader(iterFilePath);
-                RootAbi? iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
-
+                RootAbi? iterAbi = null;
+		StreamReader streamReader = new StreamReader(iterFilePath);
+		try
+		{
+                	iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
+		}
+		catch(Exception e)
+		{
+			Console.WriteLine("Error processing " + iterFilePath);
+			Console.WriteLine(e.Message);
+			continue;
+		}
                 foreach (var iterFunction in iterAbi.output.abi.Where(x => x.type == TYPE_FUNCTION || x.type == TYPE_EVENT))
                 {
                     //internalType (solidity) are translate to types (abi)
