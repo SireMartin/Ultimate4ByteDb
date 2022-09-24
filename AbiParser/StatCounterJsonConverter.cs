@@ -34,7 +34,8 @@ namespace AbiParser
                     break;
                 case FunctionStatCounter _:
                     writer.WriteStartObject();
-                    writer.WriteString("fctSig", value.Name);
+                    writer.WriteString("sigType", "Function");
+                    writer.WriteString("name", value.Name);
                     writer.WriteNumber("occurance", value.Occurence);
                     writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteStartArray("inputVarTypeColl");
@@ -47,7 +48,8 @@ namespace AbiParser
                     break;
                 case EventStatCounter _:
                     writer.WriteStartObject();
-                    writer.WriteString("eventSig", value.Name);
+                    writer.WriteString("sigType", "Event");
+                    writer.WriteString("name", value.Name);
                     writer.WriteNumber("occurance", value.Occurence);
                     writer.WriteNumber("likelyhood", value.CalculateLikelyhood());
                     writer.WriteStartArray("inputVarTypeColl");
