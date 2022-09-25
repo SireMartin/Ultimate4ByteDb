@@ -16,12 +16,22 @@ services:
     volumes:
       - data_redis:/data
     environment:
-      - TZ=UTC
+      - TZ=Europe/Brussels
     command: "--save 60 1 --loglevel warning"
     ports:
       - "6379:6379"
     networks:
       - sourcify
+  webapp:
+    image: ultimate4bytedb:1
+    build: Ultimate4ByteDb
+    environment:
+      - TZ=Europe/Brussels
+    ports:
+      - "8000:80"
+    networks:
+      - sourcify
+
 networks:
   sourcify:
     driver: bridge
