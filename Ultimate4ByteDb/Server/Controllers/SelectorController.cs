@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Ultimate4ByteDb.Server.Controllers
 {
@@ -21,11 +21,15 @@ namespace Ultimate4ByteDb.Server.Controllers
 
         [HttpGet]
         [Route("{argSelector}")]
-        public ActionResult<string> GetSelectorInfo([FromRoute]string argSelector)
+        public ActionResult<Shared.FourByteSelector> GetSelectorInfo([FromRoute]string argSelector)
         {
             string content = Encoding.UTF8.GetString(_db.StringGet(argSelector));
-            Shared.FourByteSelector fbs = JsonSerializer.Deserialize<Shared.FourByteSelector>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return Ok();
+            //hier zelf de opties specifieren, want dit valt niet onder de controller configuratie
+            Shared.FourByteSelector fbs = JsonSerializer.Deserialize<Shared.FourByteSelector>(content, 
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } })!;
+            //door de configuratie in de program.cs gebeurt hier automatisch hetzelfde als in commentiaar onder (camelcase is wel default)
+            return fbs;
+            //return new JsonResult(fbs, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Converters = { new JsonStringEnumConverter() } });
         }
     }
 }

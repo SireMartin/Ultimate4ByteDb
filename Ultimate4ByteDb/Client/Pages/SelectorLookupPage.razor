@@ -1,0 +1,51 @@
+﻿@page "/"
+
+@using Ultimate4ByteDb.Shared
+@using Models
+
+@inject HttpClient client
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<PageTitle>Selector Lookup</PageTitle>
+
+<EditForm Model="@selectorLookup" OnValidSubmit="OnValidSubmitHandlerAsync">
+    <Blazored.FluentValidation.FluentValidationValidator />
+    <ValidationSummary />
+
+    <label for="inputSelector">Selector:</label>
+    <InputText id="inputSelector" @bind-Value="@selectorLookup.Selector" />
+
+</EditForm>
+
+
+<pre id="json_content"></pre>
+
+@code{
+    private string test = null;
+    private SelectorLookup selectorLookup = new();
+    private IJSObjectReference? jsObjectRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        base.OnAfterRenderAsync(firstRender);
+        jsObjectRef = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Pages/SelectorLookupPage.razor.js");
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if(jsObjectRef is not null)
+        {
+            await jsObjectRef.DisposeAsync();
+        }
+    }
+
+    private async Task OnValidSubmitHandlerAsync()
+    {
+        JsonSerializerOptions options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, WriteIndented = true };
+        options.Converters.Add(new JsonStringEnumConverter());
+        FourByteSelector fbs = await client.GetFromJsonAsync<FourByteSelector>($"/api/Selector/{selectorLookup.Selector}", options);
+        //test = System.Text.Json.JsonSerializer.Serialize(fbs, options = options);
+        await jsObjectRef.InvokeVoidAsync("showJson", fbs);
+    }
+}

@@ -14,7 +14,7 @@ namespace Ultimate4ByteDb.Shared
 
         public class Signature
         {
-            public SignatureType sigType { get; set; }
+            public SignatureType SigType { get; set; }
             public string Name { get; set; }
             public int Occurance { get; set; }
             public float Likelyhood { get; set; }
