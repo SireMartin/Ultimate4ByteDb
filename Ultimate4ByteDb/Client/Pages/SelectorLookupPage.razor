@@ -18,7 +18,6 @@
 
 </EditForm>
 
-
 <pre id="json_content"></pre>
 
 @code{
@@ -29,7 +28,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         base.OnAfterRenderAsync(firstRender);
-        jsObjectRef = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Pages/SelectorLookupPage.razor.js");
+        if(firstRender)
+        {
+            jsObjectRef = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Pages/SelectorLookupPage.razor.js");
+        }
     }
 
     async ValueTask IAsyncDisposable.DisposeAsync()

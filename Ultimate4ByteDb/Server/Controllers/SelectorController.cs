@@ -23,7 +23,13 @@ namespace Ultimate4ByteDb.Server.Controllers
         [Route("{argSelector}")]
         public ActionResult<Shared.FourByteSelector> GetSelectorInfo([FromRoute]string argSelector)
         {
-            string content = Encoding.UTF8.GetString(_db.StringGet(argSelector));
+            string selector = argSelector.ToLower().StartsWith("0x") ? argSelector.Substring(2) : argSelector;
+            RedisValue redisValue = _db.StringGet(selector.ToLower());
+            if (redisValue.IsNull)
+            {
+                return NotFound();
+            }
+            string content = Encoding.UTF8.GetString(redisValue!);
             //hier zelf de opties specifieren, want dit valt niet onder de controller configuratie
             Shared.FourByteSelector fbs = JsonSerializer.Deserialize<Shared.FourByteSelector>(content, 
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } })!;
