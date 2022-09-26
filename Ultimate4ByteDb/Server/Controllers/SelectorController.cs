@@ -15,7 +15,7 @@ namespace Ultimate4ByteDb.Server.Controllers
 
         public SelectorController() 
         {
-            _redis = ConnectionMultiplexer.Connect("localhost:6379,abortConnect=false,ssl=false,allowAdmin=true");
+            _redis = ConnectionMultiplexer.Connect("redis:6379,abortConnect=false,ssl=false,allowAdmin=true");
             _db = _redis.GetDatabase();
         }
 

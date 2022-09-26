@@ -37,27 +37,18 @@ namespace AbiParser
         {
             foreach (var iterFilePath in Directory.EnumerateFiles(_sourcePath, "metadata.json", SearchOption.AllDirectories))
             {
-                /*Console.WriteLine($"{iterFilePath} will be processed");
-                string[] splittedFilePath = iterFilePath.Split(Path.DirectorySeparatorChar);
-                string chainId = splittedFilePath[splittedFilePath.Count() - 3];
-                string contractAddress = splittedFilePath[splittedFilePath.Count() - 2];*/
-
-            //foreach (var iterFilePath in Directory.EnumerateFiles(".", "contract*.json", SearchOption.AllDirectories))
-            //{
-            //    Console.WriteLine($"{iterFilePath} will be processed");
-
                 RootAbi? iterAbi = null;
-		StreamReader streamReader = new StreamReader(iterFilePath);
-		try
-		{
-                	iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
-		}
-		catch(Exception e)
-		{
-			Console.WriteLine("Error processing " + iterFilePath);
-			Console.WriteLine(e.Message);
-			continue;
-		}
+		        StreamReader streamReader = new StreamReader(iterFilePath);
+		        try
+		        {
+                    iterAbi = JsonSerializer.Deserialize<RootAbi>(streamReader.ReadToEnd());
+		        }
+		        catch(Exception e)
+		        {
+			        Console.WriteLine("Error processing " + iterFilePath);
+			        Console.WriteLine(e.Message);
+			        continue;
+		        }
                 foreach (var iterFunction in iterAbi.output.abi.Where(x => x.type == TYPE_FUNCTION || x.type == TYPE_EVENT))
                 {
                     //internalType (solidity) are translate to types (abi)

@@ -35,10 +35,10 @@
 
         </div>
     </div>
-    @if(TreeItems.Count > 0)
+    @if(fbs is not null)
     {
         <div class="row my-5">
-            <p>Output as TreeView for selector @($"0x{selectorLookup.Selector}") :</p>
+            <p>Output as TreeView for selector @($"0x{fbs.Selector}") :</p>
         </div>
         <div class="row my-5">
             <MudTreeView Items="@TreeItems" ExpandOnClick="true">
@@ -61,7 +61,13 @@
             </MudTreeView>
         </div>
         <div class="row my-5">
-            <p>Ouput as Json for selector @($"0x{selectorLookup.Selector}") :</p>
+            <p>Ouput as Json for selector @($"0x{fbs.Selector}") :</p>
+        </div>
+    }
+    else if(LookupFailed)
+    {
+        <div class="row my-5">
+            No signature found for bytecode @selectorLookup.Selector
         </div>
     }
 
@@ -71,37 +77,15 @@
 </div>
 
 @code{
-    private string test = null;
     private SelectorLookup selectorLookup = new();
     private IJSObjectReference? jsObjectRef;
     private HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
-
-    public class TreeItemData
-    {
-        public string Text { get; set; }
-
-        public string Icon { get; set; }
-
-        public bool IsExpanded { get; set; }
-
-        public int? Occurence { get; set; }
-
-        public float? Likelyhood {get; set;}
-
-        public bool HasChild => TreeItems != null && TreeItems.Count > 0;
-
-        public HashSet<TreeItemData> TreeItems { get; set; } = new HashSet<TreeItemData>();
-
-        public TreeItemData(string text, string icon)
-        {
-            Text = text;
-            Icon = icon;
-        }
-    }
+    private FourByteSelector? fbs;
+    private bool LookupFailed;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        base.OnAfterRenderAsync(firstRender);
+        await base.OnAfterRenderAsync(firstRender);
         if(firstRender)
         {
             jsObjectRef = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Pages/SelectorLookupPage.razor.js");
@@ -120,10 +104,19 @@
     {
         JsonSerializerOptions options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, WriteIndented = true };
         options.Converters.Add(new JsonStringEnumConverter());
-        FourByteSelector fbs = await client.GetFromJsonAsync<FourByteSelector>($"/api/Selector/{selectorLookup.Selector}", options);
-        //test = System.Text.Json.JsonSerializer.Serialize(fbs, options = options);
+        try
+        {
+            fbs = await client.GetFromJsonAsync<FourByteSelector>($"/api/Selector/{selectorLookup.Selector}", options);
+        }
+        catch(Exception)
+        {
+            fbs = null;
+            LookupFailed = true;
+            await jsObjectRef.InvokeVoidAsync("clearJson");
+            return;
+        }
+        LookupFailed = false;
         await jsObjectRef.InvokeVoidAsync("showJson", fbs);
-
         TreeItems.Clear();
         foreach(var iterSig in fbs.SigColl.OrderByDescending(x => x.Likelyhood))
         {
