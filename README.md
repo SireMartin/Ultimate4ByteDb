@@ -24,8 +24,8 @@ If you experience a problem you can
 - bind the redis container to another port on the host system
 - stop the redis server on the host system
 
-I experienced problems with the bind mount in a window environment. I simply does not bind the dump.rbp file without error notification.
-I recommend running docker-compose on Linux or WSL (if Windows). I did not test it on Mac.
+I experienced problems with the bind mount in a window environment. It simply does not bind the dump.rbp file and does not provide any error notification.
+I recommend running docker-compose on Linux or WSL. I did not test it on Mac.
 
 # parse-sourcify.yml
 
