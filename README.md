@@ -4,7 +4,7 @@ The database provides probabilities for function/event signatures and argument n
 
 Currently this repo is an MVP for evaluation and contains 2 docker compose files.
 
-# pre-parsed-redis.yml
+# evaluate-parsed-data.yml
 
 Use this docker-compose te evaluate the WebApp => http://localhost:8080
 
@@ -13,33 +13,33 @@ The data is provided as a bind mount (dir ./redis_data) and contains the parsed 
 
 Usage:
 ```
-docker-compose -f pre-parsed-redis.yml up
+docker-compose -f evaluate-parsed-data.yml up
 ```
 
 ## Troubleshooting
-You might have on an issue running the redis container, as it is exposed to the host system on the default port 6379.
+You might have an issue running the redis container, as it is exposed to the host system on the default port 6379.
 I expose this port to the host system for local development and to be able to use the redis-cli without options.
 If you experience a problem you can 
 - comment/remove the ports section of the redis service in the docker-compose file
 - bind the redis container to another port on the host system
 - stop the redis server on the host system
 
-I experienced problems with the bind mount in a window environment. It simply does not bind the dump.rbp file and does not provide any error notification.
+I experienced problems with the bind mount in a Windows environment. It simply does not bind the dump.rbp file and does not provide any error notification.
 I recommend running docker-compose on Linux or WSL. I did not test it on Mac.
 
-# parse-sourcify.yml
+# parse-and-evaluate.yml
 
 This setup parses all contract abi files in a given directory and writes the result to a redis database, which is used by a WebApp for presentation.
 
 The abi parser looks recursively for files named "metadat.json" on a bind mount and adds the parsed data to an in memory data structure. 
-At the end the data is written to a Redis database, which is persisted to a docker volume instead of a bind mount.
-The rest of the setup is same as the setup described above for the pre-parsed-redis.yml.
+Finally the data is written to a Redis database, which is persisted to a docker volume instead of a bind mount.
+The rest of the setup is same as the setup described above for the evaluate-parsed-data.yml.
 
 Usage:
 ```
-docker-compose -f parse-sourcify.yml up
+docker-compose -f parse-and-evaluate.yml up
 ```
-Change the source dir (or introduce a symlink) of the bind mount of the abi_parser service to where your sourcify data is located at. The bind mount is set at ./sourcify_data on the host system.
+Change the source dir (or introduce a symlink) of the bind mount for the abi_parser service to where your sourcify data is located at. The bind mount is defaulted at ./sourcify_data on the host system.
 
 The abi_parser service took about 2 hours for the complete Sourcify data on my i7 4th gen laptop with a 5400rpm HDD.
 
@@ -47,5 +47,4 @@ The abi_parser does not check on launch if there is already some data in the red
 
 # Feedback
 
-Please create issues on this repo if you found an error or are not happy with the layout or the (lack of some) functionality.
-
+Please create issues on this repo if you found an error or have recommendations on the presentation or functionality.
